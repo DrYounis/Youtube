@@ -2,6 +2,9 @@
 
 # Story Generation Settings
 story:
+  # AI Provider: "openai" or "anthropic"
+  ai_provider: "openai"  # Change to "anthropic" to use Claude instead
+  
   topics:
     - prophets        # Stories about prophets
     - sahaba          # Stories about companions

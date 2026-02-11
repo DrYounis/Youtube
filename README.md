@@ -4,12 +4,13 @@ An automated system for generating original Islamic story content in Arabic, cre
 
 ## Features
 
-✅ **AI-Generated Stories** - Original Islamic stories in Arabic using OpenAI GPT
+✅ **AI-Generated Stories** - Original Islamic stories in Arabic using OpenAI GPT or Anthropic Claude
 ✅ **Natural Arabic Voiceover** - Google Cloud Text-to-Speech with native Arabic voices
 ✅ **Royalty-Free Footage** - Automatic download from Pexels API
 ✅ **Professional Subtitles** - Arabic subtitles with proper text shaping
 ✅ **YouTube Integration** - Automatic upload with optimized metadata
 ✅ **Scheduling** - Automated video creation on schedule
+✅ **Flexible AI Provider** - Choose between OpenAI or Anthropic (Claude)
 
 ## Prerequisites
 
@@ -42,12 +43,25 @@ pip install -r requirements.txt
 
 ### 4. Setup API Keys
 
-#### a) OpenAI API Key
+You need to choose ONE AI provider for story generation, plus other services:
+
+#### **Story Generation (choose ONE):**
+
+**Option A: OpenAI API** (GPT-4, GPT-3.5)
 1. Go to https://platform.openai.com/api-keys
 2. Create new API key
 3. Copy key for later
+4. Set `ai_provider: "openai"` in `config/config.yaml`
 
-#### b) Google Cloud Text-to-Speech
+**Option B: Anthropic API** (Claude 3.5 Sonnet, Claude 3 Opus)
+1. Go to https://console.anthropic.com/
+2. Create API key
+3. Copy key for later
+4. Set `ai_provider: "anthropic"` in `config/config.yaml`
+
+#### **Other Required Services:**
+
+**b) Google Cloud Text-to-Speech**
 1. Go to https://console.cloud.google.com/
 2. Create a new project
 3. Enable "Cloud Text-to-Speech API"
@@ -85,7 +99,16 @@ nano config/.env
 Fill in your API keys:
 
 ```bash
+# Choose ONE AI provider:
+# For OpenAI:
 OPENAI_API_KEY=sk-your-key-here
+OPENAI_MODEL=gpt-4-turbo-preview
+
+# OR for Anthropic Claude:
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+
+# Required for all:
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/google-credentials.json
 YOUTUBE_CLIENT_SECRETS=/path/to/youtube-client-secrets.json
 PEXELS_API_KEY=your-pexels-key-here
@@ -101,12 +124,34 @@ mkdir -p assets/footage assets/audio assets/output assets/temp assets/music data
 
 Edit `config/config.yaml` to customize:
 
+- **AI Provider** (`openai` or `anthropic`)
+  - OpenAI: GPT-4 for best quality, GPT-3.5-turbo for lower cost
+  - Anthropic: Claude 3.5 Sonnet (recommended), Claude 3 Opus (premium), Claude 3 Haiku (fast/cheap)
 - **Story topics** (prophets, sahaba, moral lessons, Quran stories)
 - **Video length** (30-60 seconds)
 - **Voice settings** (voice name, speaking rate)
 - **Subtitle styling** (font, color, position)
 - **Upload settings** (privacy, category, tags)
 - **Automation schedule** (daily/weekly, time)
+
+### Switching AI Providers
+
+To switch from OpenAI to Anthropic (or vice versa):
+
+1. Edit `config/config.yaml`:
+   ```yaml
+   story:
+     ai_provider: "anthropic"  # Change to "anthropic" or "openai"
+   ```
+
+2. Make sure you have the correct API key in `config/.env`:
+   ```bash
+   # For Anthropic
+   ANTHROPIC_API_KEY=sk-ant-your-key-here
+   
+   # For OpenAI
+   OPENAI_API_KEY=sk-your-key-here
+   ```
 
 ## Usage
 

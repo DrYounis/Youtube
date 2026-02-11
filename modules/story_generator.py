@@ -1,12 +1,13 @@
 """
 Story Generator Module
-Generates original Islamic stories in Arabic using OpenAI API
+Generates original Islamic stories in Arabic using OpenAI or Anthropic API
 """
 
 import os
 import random
 from typing import Dict, List, Optional
 from openai import OpenAI
+import anthropic
 from dotenv import load_dotenv
 import yaml
 
@@ -22,8 +23,24 @@ class StoryGenerator:
             self.config = yaml.safe_load(f)
         
         self.story_config = self.config['story']
-        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        self.model = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
+        
+        # Determine which AI provider to use
+        self.provider = self.story_config.get('ai_provider', 'openai')  # Default to OpenAI
+        
+        if self.provider == 'openai':
+            api_key = os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                raise ValueError("OPENAI_API_KEY not found in environment variables")
+            self.client = OpenAI(api_key=api_key)
+            self.model = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
+        elif self.provider == 'anthropic':
+            api_key = os.getenv('ANTHROPIC_API_KEY')
+            if not api_key:
+                raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+            self.client = anthropic.Anthropic(api_key=api_key)
+            self.model = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022')
+        else:
+            raise ValueError(f"Unknown AI provider: {self.provider}. Use 'openai' or 'anthropic'")
         
         # Story templates by topic
         self.topic_prompts = {
@@ -84,19 +101,31 @@ class StoryGenerator:
         user_prompt = f"اكتب قصة إسلامية قصيرة مؤثرة حول موضوع: {topic_prompt}، مع التركيز على ثيمة '{theme}'."
         
         try:
-            # Call OpenAI API
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.8,  # Creative but controlled
-                max_tokens=800,
-                top_p=0.9
-            )
-            
-            story_text = response.choices[0].message.content.strip()
+            # Call AI API based on provider
+            if self.provider == 'openai':
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.8,
+                    max_tokens=800,
+                    top_p=0.9
+                )
+                story_text = response.choices[0].message.content.strip()
+                
+            elif self.provider == 'anthropic':
+                response = self.client.messages.create(
+                    model=self.model,
+                    max_tokens=800,
+                    temperature=0.8,
+                    system=system_prompt,
+                    messages=[
+                        {"role": "user", "content": user_prompt}
+                    ]
+                )
+                story_text = response.content[0].text.strip()
             
             # Generate title using AI
             title = self._generate_title(story_text, topic, theme)
@@ -122,21 +151,33 @@ class StoryGenerator:
         """Generate an engaging title for the story"""
         
         system_prompt = "أنت خبير في صياغة عناوين جذابة للقصص الإسلامية. اكتب عنواناً قصيراً (4-8 كلمات) جذاباً ومعبّراً."
-        
         user_prompt = f"اقترح عنواناً جذاباً لهذه القصة:\n\n{story_text[:500]}..."
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=50
-            )
+            if self.provider == 'openai':
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=50
+                )
+                title = response.choices[0].message.content.strip()
+                
+            elif self.provider == 'anthropic':
+                response = self.client.messages.create(
+                    model=self.model,
+                    max_tokens=50,
+                    temperature=0.7,
+                    system=system_prompt,
+                    messages=[
+                        {"role": "user", "content": user_prompt}
+                    ]
+                )
+                title = response.content[0].text.strip()
             
-            title = response.choices[0].message.content.strip()
             # Remove quotes if present
             title = title.strip('"').strip("'").strip('«').strip('»')
             return title
