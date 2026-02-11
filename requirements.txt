@@ -1,0 +1,34 @@
+# Core Dependencies
+openai>=1.12.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Google Cloud Services
+google-cloud-texttospeech>=2.16.0
+google-auth>=2.27.0
+google-auth-oauthlib>=1.2.0
+google-api-python-client>=2.115.0
+
+# Video Processing
+moviepy>=1.0.3
+Pillow>=10.2.0
+opencv-python>=4.9.0
+
+# Arabic Text Processing
+arabic-reshaper>=3.0.0
+python-bidi>=0.4.2
+
+# HTTP Requests
+requests>=2.31.0
+
+# Alternative TTS (optional)
+elevenlabs>=0.2.26
+
+# Scheduling (optional)
+schedule>=1.2.0
+
+# Progress bars
+tqdm>=4.66.0
+
+# JSON handling
+jsonschema>=4.20.0

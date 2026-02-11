@@ -1,0 +1,170 @@
+# YouTube Islamic Stories Automation Configuration
+
+# Story Generation Settings
+story:
+  topics:
+    - prophets        # Stories about prophets
+    - sahaba          # Stories about companions
+    - moral_lessons   # Islamic moral lessons
+    - quran_stories   # Stories from the Quran
+  
+  length_seconds: 45  # Target video length (30-60 recommended)
+  language: "ar"      # Arabic
+  
+  # Story themes for variety
+  themes:
+    - faith
+    - patience
+    - gratitude
+    - charity
+    - forgiveness
+    - wisdom
+
+# Text-to-Speech Settings
+tts:
+  provider: "google"  # Options: "google", "elevenlabs"
+  
+  # Google Cloud TTS settings
+  google:
+    voice_name: "ar-XA-Wavenet-B"  # Male Arabic voice
+    language_code: "ar-XA"
+    speaking_rate: 0.95  # Slightly slower for clarity
+    pitch: 0.0
+  
+  # ElevenLabs settings (alternative)
+  elevenlabs:
+    voice_id: ""  # Add your preferred Arabic voice ID
+    model_id: "eleven_multilingual_v2"
+
+# Video Creation Settings
+video:
+  resolution:
+    width: 1080
+    height: 1920  # 9:16 aspect ratio for Shorts
+  
+  fps: 30
+  
+  # Subtitle settings
+  subtitles:
+    enabled: true
+    font: "Cairo"  # Arabic font (Cairo, Amiri, or Tajawal)
+    font_size: 60
+    color: "white"
+    outline_color: "black"
+    outline_width: 3
+    position: "center"  # center, bottom, top
+    max_chars_per_line: 30
+  
+  # Background music
+  music:
+    enabled: false  # Set to true to add background music
+    volume: 0.15    # Background music volume (0.0-1.0)
+    fade_in: 1.0    # Fade in duration (seconds)
+    fade_out: 2.0   # Fade out duration (seconds)
+  
+  # Visual effects
+  effects:
+    add_intro: false  # Add channel intro
+    add_outro: false  # Add channel outro
+    color_grading: true  # Apply cinematic color grading
+
+# Footage Settings
+footage:
+  sources:
+    - pexels
+    - pixabay
+  
+  keywords:
+    islamic:
+      - "mosque"
+      - "islamic architecture"
+      - "prayer"
+      - "kaaba"
+      - "quran"
+      - "ramadan"
+      - "mecca"
+    nature:
+      - "sunset"
+      - "desert"
+      - "mountains"
+      - "ocean waves"
+      - "stars night sky"
+      - "clouds"
+  
+  quality: "hd"  # sd, hd, 4k
+  cache_duration_days: 30  # Keep downloaded footage for 30 days
+
+# YouTube Upload Settings
+youtube:
+  # Upload status: "public", "private", "unlisted"
+  privacy_status: "unlisted"  # Start with unlisted for testing
+  
+  # Category ID (27 = Education, 22 = People & Blogs)
+  category_id: "27"
+  
+  # Auto-generate metadata
+  title_template: "{story_title} | قصة إسلامية قصيرة"
+  
+  description_template: |
+    {story_summary}
+    
+    📖 قصة إسلامية هادفة ومؤثرة
+    
+    🔔 اشترك في القناة لمزيد من القصص الإسلامية
+    
+    #قصص_إسلامية #shorts #islamic_stories
+    #إسلام #قصة #عبرة
+  
+  # Tags
+  tags:
+    - "قصص إسلامية"
+    - "Islamic stories"
+    - "قصة"
+    - "إسلام"
+    - "عبرة"
+    - "حكمة"
+    - "Shorts"
+  
+  # Made for kids setting
+  made_for_kids: false
+  
+  # Notification to subscribers
+  notify_subscribers: false  # Set to true when going public
+
+# Automation Settings
+automation:
+  enabled: false  # Set to true to enable automatic scheduling
+  
+  # Schedule (cron-like format or simple daily/weekly)
+  schedule:
+    frequency: "daily"  # Options: "daily", "weekly", "custom"
+    time: "09:00"       # Time to run (24-hour format)
+    timezone: "Asia/Riyadh"
+  
+  # Max videos per day (respect YouTube quotas)
+  max_videos_per_day: 3
+  
+  # Error handling
+  retry_attempts: 3
+  retry_delay_seconds: 60
+  
+  # Notifications (optional)
+  notifications:
+    enabled: false
+    email: ""  # Your email for error notifications
+
+# File Paths
+paths:
+  footage_dir: "assets/footage"
+  audio_dir: "assets/audio"
+  output_dir: "assets/output"
+  temp_dir: "assets/temp"
+  music_dir: "assets/music"
+  history_file: "data/video_history.json"
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "logs/automation.log"
+  max_file_size_mb: 10
+  backup_count: 5
