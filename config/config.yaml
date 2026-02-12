@@ -82,7 +82,10 @@ footage:
   # Safety settings to avoid showing women (as requested)
   safety:
     strict_mode: true  # Enable aggressive filtering
-    negative_query: "-woman -girl -people -bikini -model -female -lady -fashion -portrait -face"
+    strict_mode: true  # Enable aggressive filtering
+    # CRITICAL: Removed negative query because Pexels might ignore the '-' and search for 'woman' instead!
+    # negative_query: "" 
+
     
     # If any of these words appear in the AI suggestion, discard it and use a safe fallback
     banned_keywords:
@@ -146,13 +149,14 @@ footage:
   
   keywords:
     islamic:
-      - "mosque"
-      - "islamic architecture"
-      - "prayer"
-      - "kaaba"
-      - "quran"
-      - "ramadan"
-      - "mecca"
+      - "mosque architecture"
+      - "minaret"
+      - "islamic art"
+      - "geometric pattern"
+      - "quran book"
+      - "lantern"
+      - "calligraphy"
+      # REMOVED: prayer, kaaba, mecca, worship (too much risk of people)
     nature:
       - "sunset"
       - "desert"

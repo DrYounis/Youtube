@@ -202,7 +202,9 @@ class FootageManager:
         # Safety filter
         safety_config = self.footage_config.get('safety', {})
         strict_mode = safety_config.get('strict_mode', False)
-        negative_query = safety_config.get('negative_query', '')
+        strict_mode = safety_config.get('strict_mode', False)
+        # negative_query = safety_config.get('negative_query', '') # REMOVED: potentially dangerous
+        banned_keywords = safety_config.get('banned_keywords', [])
         banned_keywords = safety_config.get('banned_keywords', [])
         mandatory_modifiers = safety_config.get('mandatory_modifiers', '')
         thematic_mapping = self.footage_config.get('thematic_mapping', {})
@@ -283,9 +285,17 @@ class FootageManager:
             if strict_mode and mandatory_modifiers:
                 search_terms.append(mandatory_modifiers)
             
-            full_query = f"{', '.join(search_terms)} {negative_query}".strip()
+            # Construct strict query
+            # Format: "keyword phrase, no people, nature..."
+            # NO NEGATIVE KEYWORDS as they might be ignored by API
+            search_terms = [keyword]
             
-            print(f"Searching Pexels with strict query: '{full_query}'...")
+            if strict_mode and mandatory_modifiers:
+                search_terms.append(mandatory_modifiers)
+            
+            full_query = f"{', '.join(search_terms)}".strip()
+            
+            print(f"Searching Pexels with strict POSITIVE query: '{full_query}'...")
             
             # Search Pexels
             videos = self.search_videos(full_query, orientation='portrait')
