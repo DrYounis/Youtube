@@ -201,17 +201,38 @@ class FootageManager:
         """
         # Safety filter
         safety_config = self.footage_config.get('safety', {})
+        strict_mode = safety_config.get('strict_mode', False)
         negative_query = safety_config.get('negative_query', '')
+        banned_keywords = safety_config.get('banned_keywords', [])
+        mandatory_modifiers = safety_config.get('mandatory_modifiers', '')
         
         # Determine keywords to use
         keywords_to_try = []
         
         if ai_keywords:
-            keywords_to_try = [k.strip() for k in ai_keywords.split(',')]
+            # Check for banned words
+            candidates = [k.strip().lower() for k in ai_keywords.split(',')]
+            safe_candidates = []
+            
+            for k in candidates:
+                is_banned = False
+                for banned in banned_keywords:
+                    if banned in k:
+                        print(f"⚠️  BLOCKED unsafe keyword: '{k}' (contains '{banned}')")
+                        is_banned = True
+                        break
+                if not is_banned:
+                    safe_candidates.append(k)
+            
+            if safe_candidates:
+                keywords_to_try = safe_candidates
+            else:
+                print("⚠️  All AI keywords were blocked. Falling back to category defaults.")
         
-        # Add category defaults for variety
+        # Add category defaults for variety (essential fallback)
         category_keywords = self.footage_config['keywords'].get(category, [])
         if category_keywords:
+            # In strict mode, only add one fallback to ensure we try AI ones first
             keywords_to_try.append(random.choice(category_keywords))
         
         # Shuffle to try different ones
@@ -222,7 +243,7 @@ class FootageManager:
             cache_key = f"q_{keyword.replace(' ', '_')}"
             
             if cache_key in self.cache.get('keywords', {}):
-                # Similar logic as before for cache...
+                # Check for cached files...
                 cached_files = self.cache['keywords'][cache_key]
                 valid_files = []
                 for filename in cached_files:
@@ -237,9 +258,18 @@ class FootageManager:
                 if valid_files:
                     return random.choice(valid_files)
             
-            # Search with safety filter
-            full_query = f"{keyword} {negative_query}".strip()
-            print(f"Searching for footage: '{full_query}'...")
+            # Construct strict query
+            # Format: "keyword phrase, no people, landscape, nature, -woman -bikini"
+            search_terms = [keyword]
+            
+            if strict_mode and mandatory_modifiers:
+                search_terms.append(mandatory_modifiers)
+            
+            full_query = f"{', '.join(search_terms)} {negative_query}".strip()
+            
+            print(f"Searching Pexels with strict query: '{full_query}'...")
+            
+            # Search Pexels
             videos = self.search_videos(full_query, orientation='portrait')
             
             if videos:
@@ -306,38 +336,21 @@ def test_footage_manager():
     try:
         manager = FootageManager()
         
-        # Test search
-        print("\n🔍 Searching for Islamic footage...")
-        videos = manager.search_videos("mosque", orientation='portrait', per_page=5)
-        print(f"Found {len(videos)} videos")
+        # Test 1: Safe Search
+        print("\n🔍 Test 1: Normal Search")
+        manager.get_random_footage(ai_keywords="mosque, architecture")
         
-        if videos:
-            print("\nTop 3 results:")
-            for i, video in enumerate(videos[:3], 1):
-                print(f"{i}. ID: {video['id']}, Duration: {video['duration']}s")
-                print(f"   URL: {video['url']}")
+        # Test 2: Unsafe Search (Should be completely blocked or sanitized)
+        print("\n🔍 Test 2: Unsafe Keyword Search (woman, beach)")
+        # This should trigger the block/sanitize logic
+        manager.get_random_footage(ai_keywords="beautiful woman, beach, summer")
         
-        # Test random footage
-        print("\n📥 Getting random Islamic footage...")
-        footage_path = manager.get_random_footage('islamic', min_duration=10)
-        
-        if footage_path:
-            print(f"✅ Footage ready: {footage_path}")
-            file_size = os.path.getsize(footage_path) / (1024 * 1024)
-            print(f"   File size: {file_size:.1f} MB")
-        else:
-            print("❌ Failed to get footage")
-        
-        # Show cache stats
+        # Test 3: Cache Stats
         print("\n📊 Cache Statistics:")
         print(f"   Cached videos: {len(manager.cache['videos'])}")
-        print(f"   Keyword groups: {len(manager.cache['keywords'])}")
         
     except Exception as e:
         print(f"\n❌ Error: {str(e)}")
-        print("\nMake sure you have:")
-        print("1. Set PEXELS_API_KEY in .env file")
-        print("2. Signed up for free API key at: https://www.pexels.com/api/")
     
     print("\n" + "=" * 50)
     print("Test Complete!")

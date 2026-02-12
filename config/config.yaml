@@ -79,10 +79,40 @@ footage:
     - pixabay
   
   # Safety settings to avoid showing women (as requested)
+  # Safety settings to avoid showing women (as requested)
   safety:
-    negative_query: "-woman -girl -people -bikini -model"
-    # Mandatory keywords to add to ensure modesty if people are shown
-    must_include_for_people: "halal, modesty, hijab"
+    strict_mode: true  # Enable aggressive filtering
+    negative_query: "-woman -girl -people -bikini -model -female -lady -fashion -portrait -face"
+    
+    # If any of these words appear in the AI suggestion, discard it and use a safe fallback
+    banned_keywords:
+      - "woman"
+      - "girl"
+      - "lady"
+      - "female"
+      - "bikini"
+      - "swim"
+      - "beach"
+      - "pool"
+      - "summer"
+      - "fashion"
+      - "model"
+      - "dress"
+      - "hair"
+      - "makeup"
+      - "beauty"
+      - "couple"
+      - "romance"
+      - "love"
+      - "kiss"
+      - "hug"
+      - "people"
+      - "consumer"
+      
+    # Mandatory keywords to append to EVERY search query
+    mandatory_modifiers: "no people, landscape, architecture, nature, abstract, blur, cinematic"
+    
+    must_include_for_people: "halal, modesty, hijab, long clothes, no face"
   
   keywords:
     islamic:
