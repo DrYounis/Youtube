@@ -7,6 +7,7 @@ import os
 import requests
 import json
 import random
+from urllib.parse import urlparse
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -93,7 +94,7 @@ class FootageManager:
             return data.get('videos', [])
             
         except requests.RequestException as e:
-            print(f"Error searching videos: {str(e)}")
+            print(f"Error searching videos: {type(e).__name__}")
             return []
     
     def download_video(self, video_data: Dict, filename: Optional[str] = None) -> Optional[str]:
@@ -131,6 +132,13 @@ class FootageManager:
         video_url = video_file.get('link')
         if not video_url:
             print("No download link found")
+            return None
+
+        # Validate URL domain to prevent SSRF
+        parsed = urlparse(video_url)
+        allowed_domains = ['player.vimeo.com', 'vod-progressive.akamaized.net', 'videos.pexels.com']
+        if not any(parsed.hostname and parsed.hostname.endswith(d) for d in allowed_domains):
+            print(f"Blocked download from untrusted domain: {parsed.hostname}")
             return None
         
         # Generate filename
@@ -171,7 +179,7 @@ class FootageManager:
             return filepath
             
         except requests.RequestException as e:
-            print(f"Error downloading video: {str(e)}")
+            print(f"Error downloading video: {type(e).__name__}")
             return None
     
     def get_random_footage(

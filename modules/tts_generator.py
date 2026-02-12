@@ -175,7 +175,7 @@ class TTSGenerator:
             response = requests.post(url, json=data, headers=headers)
             
             if response.status_code != 200:
-                raise Exception(f"ElevenLabs API error: {response.status_code} - {response.text}")
+                raise Exception(f"ElevenLabs API error: HTTP {response.status_code}")
             
             # Create output directory if it doesn't exist
             os.makedirs(os.path.dirname(output_path), exist_ok=True)

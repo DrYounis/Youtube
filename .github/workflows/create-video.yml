@@ -25,10 +25,14 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: video-creation
+  cancel-in-progress: false
+
 jobs:
   create-video:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -59,6 +63,10 @@ jobs:
           ELEVENLABS_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           PEXELS_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: |
+          # Mask secrets so they never appear in logs
+          echo "::add-mask::$ANTHROPIC_KEY"
+          echo "::add-mask::$ELEVENLABS_KEY"
+          echo "::add-mask::$PEXELS_KEY"
           {
             printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_KEY"
             printf 'ANTHROPIC_MODEL=%s\n' "$ANTHROPIC_MDL"
@@ -81,33 +89,36 @@ jobs:
       
       - name: Create video
         id: create_video
+        env:
+          INPUT_TOPIC: ${{ github.event.inputs.topic }}
+          INPUT_THEME: ${{ github.event.inputs.theme }}
+          INPUT_UPLOAD: ${{ github.event.inputs.upload_to_youtube }}
         run: |
-          # Build command
-          CMD="python3 main.py"
+          # Build command safely using array (prevents shell injection)
+          declare -a CMD=("python3" "main.py")
 
           # Add topic if specified
-          if [ "${{ github.event.inputs.topic }}" != "random" ]; then
-            CMD="$CMD --topic ${{ github.event.inputs.topic }}"
+          if [ "$INPUT_TOPIC" != "random" ] && [ -n "$INPUT_TOPIC" ]; then
+            CMD+=("--topic" "$INPUT_TOPIC")
           fi
 
           # Add theme if specified
-          if [ -n "${{ github.event.inputs.theme }}" ]; then
-            CMD="$CMD --theme '${{ github.event.inputs.theme }}'"
+          if [ -n "$INPUT_THEME" ]; then
+            CMD+=("--theme" "$INPUT_THEME")
           fi
 
           # Add upload flag
-          if [ "${{ github.event.inputs.upload_to_youtube }}" != "true" ]; then
-            CMD="$CMD --dry-run"
+          if [ "$INPUT_UPLOAD" != "true" ]; then
+            CMD+=("--dry-run")
           fi
 
-          # Run command
-          echo "Running: $CMD"
-          eval $CMD 2>&1 | tee /tmp/video_output.log
+          # Run command safely
+          echo "Running: ${CMD[*]}"
+          "${CMD[@]}" 2>&1 | tee /tmp/video_output.log
           EXIT_CODE=${PIPESTATUS[0]}
 
           if [ $EXIT_CODE -ne 0 ]; then
             echo "::error title=Video Creation Failed::Pipeline exited with code $EXIT_CODE. Check logs for details."
-            # Show last 20 lines for quick debugging
             echo "--- Last 20 lines of output ---"
             tail -20 /tmp/video_output.log
             exit $EXIT_CODE

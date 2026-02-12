@@ -4,8 +4,8 @@ Handles authentication and uploading videos to YouTube
 """
 
 import os
+import stat
 import json
-import pickle
 from typing import Dict, Optional
 from datetime import datetime
 from google.auth.transport.requests import Request
@@ -82,8 +82,9 @@ class YouTubeUploader:
                 )
                 creds = flow.run_local_server(port=8080)
             
-            # Save credentials
-            with open(self.token_file, 'w') as token:
+            # Save credentials with restricted permissions (owner read/write only)
+            fd = os.open(self.token_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, 'w') as token:
                 token.write(creds.to_json())
             
             print("✅ Authentication successful!")

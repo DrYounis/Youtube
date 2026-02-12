@@ -4,6 +4,7 @@ Compiles final video from footage, voiceover, and subtitles
 """
 
 import os
+import tempfile
 from typing import Dict, List, Optional, Tuple
 from moviepy.editor import (
     VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip,
@@ -305,7 +306,7 @@ class VideoCreator:
             fps=self.fps,
             codec='libx264',
             audio_codec='aac',
-            temp_audiofile=os.path.join(self.paths_config['temp_dir'], 'temp_audio.m4a'),
+            temp_audiofile=os.path.join(self.paths_config['temp_dir'], f'temp_audio_{os.getpid()}.m4a'),
             remove_temp=True,
             preset='medium',  # Faster encoding
             threads=4
