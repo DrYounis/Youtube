@@ -27,11 +27,21 @@ class AutomationPipeline:
         
         # Initialize all modules
         print("🚀 Initializing automation pipeline...")
-        self.story_gen = StoryGenerator(config_path)
-        self.tts_gen = TTSGenerator(config_path)
-        self.footage_mgr = FootageManager(config_path)
+        # Initialize components
+        self.story_generator = StoryGenerator(config_path)
+        self.tts_generator = TTSGenerator(config_path)
+        self.footage_manager = FootageManager(config_path)
         self.video_creator = VideoCreator(config_path)
-        self.youtube_uploader = YouTubeUploader(config_path)
+        
+        # YouTube uploader is optional (for testing without upload)
+        try:
+            self.youtube_uploader = YouTubeUploader(config_path)
+            self.can_upload = True
+        except (ValueError, FileNotFoundError) as e:
+            print(f"⚠️  YouTube upload not available: {str(e)}")
+            print("   Videos will be created but not uploaded.")
+            self.youtube_uploader = None
+            self.can_upload = False
         
         print("✅ All modules initialized!\n")
     
@@ -59,7 +69,7 @@ class AutomationPipeline:
         try:
             # Step 1: Generate story
             print("📖 Step 1/5: Generating Islamic story...")
-            story_data = self.story_gen.generate_story(topic=topic, theme=theme)
+            story_data = self.story_generator.generate_story(topic=topic, theme=theme)
             
             print(f"   ✅ Generated: {story_data['title']}")
             print(f"   📝 Topic: {story_data['topic']}, Theme: {story_data['theme']}")
@@ -73,7 +83,7 @@ class AutomationPipeline:
                 audio_filename
             )
             
-            tts_result = self.tts_gen.generate_voiceover(
+            tts_result = self.tts_generator.generate_voiceover(
                 story_data['story'],
                 audio_path
             )
@@ -85,7 +95,7 @@ class AutomationPipeline:
             print("🎬 Step 3/5: Selecting background footage...")
             footage_category = 'islamic' if story_data['topic'] in ['prophets', 'sahaba', 'quran_stories'] else 'nature'
             
-            footage_path = self.footage_mgr.get_random_footage(
+            footage_path = self.footage_manager.get_random_footage(
                 category=footage_category,
                 min_duration=int(tts_result['duration'])
             )
@@ -118,8 +128,8 @@ class AutomationPipeline:
                 title_template = self.config['youtube']['title_template']
                 title = title_template.format(story_title=story_data['title'])
                 
-                description = self.story_gen.generate_description(story_data)
-                tags = self.story_gen.generate_tags(story_data)
+                description = self.story_generator.generate_description(story_data)
+                tags = self.story_generator.generate_tags(story_data)
                 
                 upload_result = self.youtube_uploader.upload_video(
                     video_path=video_result['output_path'],
