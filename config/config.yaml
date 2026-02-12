@@ -102,7 +102,7 @@ footage:
 # YouTube Upload Settings
 youtube:
   # Upload status: "public", "private", "unlisted"
-  privacy_status: "unlisted"  # Start with unlisted for testing
+  privacy_status: "public"  # Auto-upload as public videos
   
   # Category ID (27 = Education, 22 = People & Blogs)
   category_id: "27"

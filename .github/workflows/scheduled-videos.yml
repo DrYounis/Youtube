@@ -1,9 +1,9 @@
 name: Scheduled Video Creation
 
 on:
-  # Schedule: Run daily at 9 AM UTC (adjust to your timezone)
+  # Schedule: Run daily at 9 AM Saudi Arabia time (6 AM UTC)
   schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM UTC
+    - cron: '0 6 * * *'  # Daily at 9 AM Saudi Arabia (6 AM UTC)
   
   # Also allow manual trigger
   workflow_dispatch:
@@ -45,13 +45,17 @@ jobs:
           ANTHROPIC_MODEL=${{ secrets.ANTHROPIC_MODEL }}
           ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
           PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
-          YOUTUBE_CLIENT_SECRETS=${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+          YOUTUBE_CLIENT_SECRETS=/github/workspace/config/youtube-client-secrets.json
           EOF
       
       - name: Create YouTube credentials
         if: ${{ secrets.YOUTUBE_CLIENT_SECRETS != '' }}
         run: |
           echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
+          # Also create token file if it exists
+          if [ -n "${{ secrets.YOUTUBE_TOKEN }}" ]; then
+            echo '${{ secrets.YOUTUBE_TOKEN }}' > config/youtube-token.json
+          fi
       
       - name: Create videos
         id: create_videos
@@ -66,7 +70,15 @@ jobs:
           
           for i in $(seq 1 $COUNT); do
             echo "Creating video $i of $COUNT..."
-            python3 main.py --dry-run
+            
+            # If YouTube credentials exist, upload. Otherwise dry-run
+            if [ -f "config/youtube-client-secrets.json" ] && [ -f "config/youtube-token.json" ]; then
+              echo "YouTube credentials found - uploading to YouTube"
+              python3 main.py
+            else
+              echo "No YouTube credentials - creating video without upload"
+              python3 main.py --dry-run
+            fi
             
             # Wait a bit between videos to avoid rate limits
             if [ $i -lt $COUNT ]; then
