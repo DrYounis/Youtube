@@ -10,6 +10,8 @@ from openai import OpenAI
 import anthropic
 from dotenv import load_dotenv
 import yaml
+import re
+import json
 
 # Load environment variables
 load_dotenv(dotenv_path='config/.env')
@@ -179,29 +181,32 @@ class StoryGenerator:
     def _clean_title(self, title: str) -> str:
         """Clean title from prefixes, quotes and extra labels"""
         
-        # Remove common prefixes
+        # Remove common prefixes and labels
         prefixes = [
             r'^عنوان مقترح:\s*',
             r'^العنوان:\s*',
             r'^مقترح لعنوان:\s*',
             r'^Title:\s*',
-            r'^Suggested Title:\s*'
+            r'^Suggested Title:\s*',
+            r'^العنوان المقترح:\s*',
+            r'^\s*-\s*'
         ]
         
         cleaned = title.strip()
         for p in prefixes:
-            cleaned = re.sub(p, '', cleaned, flags=re.IGNORECASE)
+            cleaned = re.sub(p, '', cleaned, flags=re.IGNORECASE).strip()
             
-        # Remove surrounding quotes
-        cleaned = cleaned.strip('"').strip("'").strip('«').strip('»')
+        # Remove surrounding quotes and brackets
+        cleaned = cleaned.strip('"').strip("'").strip('«').strip('»').strip('(').strip(')')
         
+        # Remove trailing/leading spaces one last time
         return cleaned.strip()
     
     def _generate_title(self, story_text: str, topic: str, theme: str) -> str:
         """Generate an engaging title for the story"""
         
-        system_prompt = "أنت خبير في صياغة عناوين جذابة للقصص الإسلامية. اكتب العنوان فقط مباشرة بدون أي مقدمات أو علامات تنصيص. لا تكتب كلمات مثل 'عنوان مقترح' أو 'العنوان'."
-        user_prompt = f"اقترح عنواناً جذاباً لهذه القصة:\n\n{story_text[:500]}..."
+        system_prompt = "أنت خبير في صياغة عناوين جذابة للقصص الإسلامية. مخرجاتك يجب أن تكون (نص العنوان فقط) بدون أي كلمات إضافية مثل 'عنوان مقترح' أو 'نص العنوان' وبدون علامات تنصيص."
+        user_prompt = f"اقترح عنواناً جذاباً ومؤثراً لهذه القصة الإسلامية:\n\n{story_text[:500]}..."
         
         try:
             if self.provider == 'openai':
