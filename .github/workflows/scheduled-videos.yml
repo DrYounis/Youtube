@@ -31,32 +31,39 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick
+          sudo apt-get install -y ffmpeg imagemagick fonts-noto fonts-noto-cjk fonts-freefont-ttf
           sudo sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml || true
+          sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true
       
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
       
       - name: Create .env file
+        env:
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MDL: ${{ secrets.ANTHROPIC_MODEL }}
+          ELEVENLABS_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          PEXELS_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: |
-          cat > config/.env << EOF
-          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_MODEL=${{ secrets.ANTHROPIC_MODEL }}
-          ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
-          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
-          YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json
-          EOF
+          {
+            printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_KEY"
+            printf 'ANTHROPIC_MODEL=%s\n' "$ANTHROPIC_MDL"
+            printf 'ELEVENLABS_API_KEY=%s\n' "$ELEVENLABS_KEY"
+            printf 'PEXELS_API_KEY=%s\n' "$PEXELS_KEY"
+            printf 'YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json\n'
+          } > config/.env
       
       - name: Create YouTube credentials
         env:
           YOUTUBE_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+          YOUTUBE_TOKEN_VAL: ${{ secrets.YOUTUBE_TOKEN }}
         if: ${{ env.YOUTUBE_SECRETS != '' }}
         run: |
-          echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
+          printf '%s' "$YOUTUBE_SECRETS" > config/youtube-client-secrets.json
           # Also create token file if it exists
-          if [ -n "${{ secrets.YOUTUBE_TOKEN }}" ]; then
-            echo '${{ secrets.YOUTUBE_TOKEN }}' > config/youtube_token.json
+          if [ -n "$YOUTUBE_TOKEN_VAL" ]; then
+            printf '%s' "$YOUTUBE_TOKEN_VAL" > config/youtube_token.json
           fi
       
       - name: Create videos
@@ -67,28 +74,33 @@ jobs:
           if [ -z "$COUNT" ]; then
             COUNT=1
           fi
-          
+
           echo "Creating $COUNT video(s)..."
-          
+          FAILED=0
+
           for i in $(seq 1 $COUNT); do
-            echo "Creating video $i of $COUNT..."
-            
+            echo "========== Creating video $i of $COUNT =========="
+
             # If YouTube credentials exist, upload. Otherwise dry-run
             if [ -f "config/youtube-client-secrets.json" ] && [ -f "config/youtube_token.json" ]; then
               echo "YouTube credentials found - uploading to YouTube"
-              python3 main.py
+              python3 main.py 2>&1 | tee /tmp/video_output_${i}.log || FAILED=$((FAILED+1))
             else
               echo "No YouTube credentials - creating video without upload"
-              python3 main.py --dry-run
+              python3 main.py --dry-run 2>&1 | tee /tmp/video_output_${i}.log || FAILED=$((FAILED+1))
             fi
-            
+
             # Wait a bit between videos to avoid rate limits
             if [ $i -lt $COUNT ]; then
               sleep 10
             fi
           done
-          
-          echo "All videos created successfully!"
+
+          if [ $FAILED -gt 0 ]; then
+            echo "::error title=Video Creation Failed::$FAILED of $COUNT video(s) failed. Check logs for details."
+            exit 1
+          fi
+          echo "All $COUNT video(s) created successfully!"
       
       - name: Upload videos as artifacts
         uses: actions/upload-artifact@v4
@@ -99,7 +111,12 @@ jobs:
             assets/audio/*.mp3
           retention-days: 7
       
-      - name: Notify completion
+      - name: Report result
+        if: always()
         run: |
-          VIDEO_COUNT=$(ls assets/output/*.mp4 | wc -l)
-          echo "::notice title=Videos Created::Successfully created $VIDEO_COUNT video(s)"
+          if [ "${{ steps.create_videos.outcome }}" == "success" ]; then
+            VIDEO_COUNT=$(ls assets/output/*.mp4 2>/dev/null | wc -l)
+            echo "::notice title=Videos Created::Successfully created $VIDEO_COUNT video(s)"
+          else
+            echo "::error title=Pipeline Failed::Video creation failed. Check the 'Create videos' step logs for details."
+          fi

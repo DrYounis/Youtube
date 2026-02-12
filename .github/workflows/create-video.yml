@@ -42,40 +42,41 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick
+          sudo apt-get install -y ffmpeg imagemagick fonts-noto fonts-noto-cjk fonts-freefont-ttf
           # Configure ImageMagick to allow PDF/font operations
           sudo sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml || true
+          # Also fix ImageMagick policy for text rendering
+          sudo sed -i 's/rights="none" pattern="@\*"/rights="read|write" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true
       
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
       
       - name: Create .env file from secrets
+        env:
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MDL: ${{ secrets.ANTHROPIC_MODEL }}
+          ELEVENLABS_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          PEXELS_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: |
-          cat > config/.env << EOF
-          # AI Story Generation
-          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_MODEL=${{ secrets.ANTHROPIC_MODEL }}
-          
-          # Text-to-Speech
-          ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
-          
-          # Stock Footage
-          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
-          
-          # YouTube Upload (optional)
-          YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json
-          EOF
+          {
+            printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_KEY"
+            printf 'ANTHROPIC_MODEL=%s\n' "$ANTHROPIC_MDL"
+            printf 'ELEVENLABS_API_KEY=%s\n' "$ELEVENLABS_KEY"
+            printf 'PEXELS_API_KEY=%s\n' "$PEXELS_KEY"
+            printf 'YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json\n'
+          } > config/.env
       
       - name: Create YouTube credentials file (if secrets exist)
         env:
           YOUTUBE_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+          YOUTUBE_TOKEN_VAL: ${{ secrets.YOUTUBE_TOKEN }}
         if: ${{ env.YOUTUBE_SECRETS != '' }}
         run: |
-          echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
+          printf '%s' "$YOUTUBE_SECRETS" > config/youtube-client-secrets.json
           # Also create token file if it exists
-          if [ -n "${{ secrets.YOUTUBE_TOKEN }}" ]; then
-            echo '${{ secrets.YOUTUBE_TOKEN }}' > config/youtube_token.json
+          if [ -n "$YOUTUBE_TOKEN_VAL" ]; then
+            printf '%s' "$YOUTUBE_TOKEN_VAL" > config/youtube_token.json
           fi
       
       - name: Create video
@@ -83,30 +84,44 @@ jobs:
         run: |
           # Build command
           CMD="python3 main.py"
-          
+
           # Add topic if specified
           if [ "${{ github.event.inputs.topic }}" != "random" ]; then
             CMD="$CMD --topic ${{ github.event.inputs.topic }}"
           fi
-          
+
           # Add theme if specified
           if [ -n "${{ github.event.inputs.theme }}" ]; then
-            CMD="$CMD --theme ${{ github.event.inputs.theme }}"
+            CMD="$CMD --theme '${{ github.event.inputs.theme }}'"
           fi
-          
+
           # Add upload flag
           if [ "${{ github.event.inputs.upload_to_youtube }}" != "true" ]; then
             CMD="$CMD --dry-run"
           fi
-          
+
           # Run command
           echo "Running: $CMD"
-          $CMD
-          
+          eval $CMD 2>&1 | tee /tmp/video_output.log
+          EXIT_CODE=${PIPESTATUS[0]}
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error title=Video Creation Failed::Pipeline exited with code $EXIT_CODE. Check logs for details."
+            # Show last 20 lines for quick debugging
+            echo "--- Last 20 lines of output ---"
+            tail -20 /tmp/video_output.log
+            exit $EXIT_CODE
+          fi
+
           # Get the latest video file
-          VIDEO_FILE=$(ls -t assets/output/*.mp4 | head -1)
-          echo "video_file=$VIDEO_FILE" >> $GITHUB_OUTPUT
-          echo "Created video: $VIDEO_FILE"
+          VIDEO_FILE=$(ls -t assets/output/*.mp4 2>/dev/null | head -1)
+          if [ -n "$VIDEO_FILE" ]; then
+            echo "video_file=$VIDEO_FILE" >> $GITHUB_OUTPUT
+            echo "Created video: $VIDEO_FILE"
+          else
+            echo "::error title=No Video File::Pipeline completed but no .mp4 file was found in assets/output/"
+            exit 1
+          fi
       
       - name: Upload video as artifact
         uses: actions/upload-artifact@v4
@@ -117,8 +132,12 @@ jobs:
             assets/audio/*.mp3
           retention-days: 7
       
-      - name: Comment on workflow run
+      - name: Report result
         if: always()
         run: |
-          echo "::notice title=Video Created::Video successfully created and uploaded as artifact!"
-          echo "::notice title=Download::Go to the Actions tab to download your video"
+          if [ "${{ steps.create_video.outcome }}" == "success" ]; then
+            echo "::notice title=Video Created::Video successfully created and uploaded as artifact!"
+            echo "::notice title=Download::Go to the Actions tab to download your video"
+          else
+            echo "::error title=Pipeline Failed::Video creation failed. Check the 'Create video' step logs for details."
+          fi
