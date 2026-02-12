@@ -259,9 +259,9 @@ For GitHub Actions automation:
 
 **Secret 2: YOUTUBE_TOKEN**
 - Name: `YOUTUBE_TOKEN`
-- Value: Copy the **entire content** of `youtube-token.json`
+- Value: Copy the **entire content** of `youtube_token.json`
   ```bash
-  cat /Volumes/Samsung/youtube/config/youtube-token.json
+  cat /Volumes/Samsung/youtube/config/youtube_token.json
   ```
 - Paste all the JSON content
 - Click **"Add secret"**
@@ -410,7 +410,7 @@ To upload more videos:
    - Monitor comments
 
 4. **Backup tokens**:
-   - Keep a copy of `youtube-token.json` somewhere safe
+   - Keep a copy of `youtube_token.json` somewhere safe
    - If lost, re-authenticate
 
 ---

@@ -44,7 +44,7 @@ python3 -c "from modules.youtube_uploader import YouTubeUploader; uploader = You
 - Browser opens
 - Sign in with your YouTube account
 - Grant permissions
-- Token saved to `config/youtube-token.json`
+- Token saved to `config/youtube_token.json`
 
 ### Step 3: Test Local Upload
 
@@ -74,7 +74,7 @@ cat /Volumes/Samsung/youtube/config/youtube-client-secrets.json
 **2. YOUTUBE_TOKEN**
 ```bash
 # Copy the content
-cat /Volumes/Samsung/youtube/config/youtube-token.json
+cat /Volumes/Samsung/youtube/config/youtube_token.json
 ```
 - Click "New repository secret"
 - Name: `YOUTUBE_TOKEN`
@@ -197,7 +197,7 @@ cd /Volumes/Samsung/youtube
 python3 -c "from modules.youtube_uploader import YouTubeUploader; uploader = YouTubeUploader(); uploader.authenticate()"
 
 # Update GitHub secret with new token
-cat config/youtube-token.json
+cat config/youtube_token.json
 # Copy and update YOUTUBE_TOKEN secret
 ```
 
