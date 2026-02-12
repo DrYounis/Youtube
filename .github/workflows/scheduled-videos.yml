@@ -1,0 +1,91 @@
+name: Scheduled Video Creation
+
+on:
+  # Schedule: Run daily at 9 AM UTC (adjust to your timezone)
+  schedule:
+    - cron: '0 9 * * *'  # Daily at 9 AM UTC
+  
+  # Also allow manual trigger
+  workflow_dispatch:
+    inputs:
+      videos_count:
+        description: 'Number of videos to create'
+        required: false
+        type: number
+        default: 1
+
+jobs:
+  create-videos:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick
+          sudo sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml || true
+      
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Create .env file
+        run: |
+          cat > config/.env << EOF
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL=${{ secrets.ANTHROPIC_MODEL }}
+          ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
+          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
+          YOUTUBE_CLIENT_SECRETS=${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+          EOF
+      
+      - name: Create YouTube credentials
+        if: ${{ secrets.YOUTUBE_CLIENT_SECRETS != '' }}
+        run: |
+          echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
+      
+      - name: Create videos
+        id: create_videos
+        run: |
+          # Default to 1 video if not specified
+          COUNT=${{ github.event.inputs.videos_count }}
+          if [ -z "$COUNT" ]; then
+            COUNT=1
+          fi
+          
+          echo "Creating $COUNT video(s)..."
+          
+          for i in $(seq 1 $COUNT); do
+            echo "Creating video $i of $COUNT..."
+            python3 main.py --dry-run
+            
+            # Wait a bit between videos to avoid rate limits
+            if [ $i -lt $COUNT ]; then
+              sleep 10
+            fi
+          done
+          
+          echo "All videos created successfully!"
+      
+      - name: Upload videos as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: scheduled-videos-${{ github.run_number }}
+          path: |
+            assets/output/*.mp4
+            assets/audio/*.mp3
+          retention-days: 7
+      
+      - name: Notify completion
+        run: |
+          VIDEO_COUNT=$(ls assets/output/*.mp4 | wc -l)
+          echo "::notice title=Videos Created::Successfully created $VIDEO_COUNT video(s)"

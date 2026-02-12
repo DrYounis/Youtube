@@ -1,0 +1,118 @@
+name: Create Islamic Story Video
+
+on:
+  # Manual trigger with options
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Story topic'
+        required: false
+        type: choice
+        options:
+          - random
+          - prophets
+          - sahaba
+          - moral_lessons
+          - quran_stories
+        default: 'random'
+      theme:
+        description: 'Story theme (optional)'
+        required: false
+        type: string
+      upload_to_youtube:
+        description: 'Upload to YouTube?'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  create-video:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick
+          # Configure ImageMagick to allow PDF/font operations
+          sudo sed -i 's/rights="none" pattern="PDF"/rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml || true
+      
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Create .env file from secrets
+        run: |
+          cat > config/.env << EOF
+          # AI Story Generation
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL=${{ secrets.ANTHROPIC_MODEL }}
+          
+          # Text-to-Speech
+          ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
+          
+          # Stock Footage
+          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
+          
+          # YouTube Upload (optional)
+          YOUTUBE_CLIENT_SECRETS=${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+          EOF
+      
+      - name: Create YouTube credentials file (if secrets exist)
+        if: ${{ secrets.YOUTUBE_CLIENT_SECRETS != '' }}
+        run: |
+          echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
+      
+      - name: Create video
+        id: create_video
+        run: |
+          # Build command
+          CMD="python3 main.py"
+          
+          # Add topic if specified
+          if [ "${{ github.event.inputs.topic }}" != "random" ]; then
+            CMD="$CMD --topic ${{ github.event.inputs.topic }}"
+          fi
+          
+          # Add theme if specified
+          if [ -n "${{ github.event.inputs.theme }}" ]; then
+            CMD="$CMD --theme ${{ github.event.inputs.theme }}"
+          fi
+          
+          # Add upload flag
+          if [ "${{ github.event.inputs.upload_to_youtube }}" != "true" ]; then
+            CMD="$CMD --dry-run"
+          fi
+          
+          # Run command
+          echo "Running: $CMD"
+          $CMD
+          
+          # Get the latest video file
+          VIDEO_FILE=$(ls -t assets/output/*.mp4 | head -1)
+          echo "video_file=$VIDEO_FILE" >> $GITHUB_OUTPUT
+          echo "Created video: $VIDEO_FILE"
+      
+      - name: Upload video as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: islamic-story-video-${{ github.run_number }}
+          path: |
+            assets/output/*.mp4
+            assets/audio/*.mp3
+          retention-days: 7
+      
+      - name: Comment on workflow run
+        if: always()
+        run: |
+          echo "::notice title=Video Created::Video successfully created and uploaded as artifact!"
+          echo "::notice title=Download::Go to the Actions tab to download your video"
