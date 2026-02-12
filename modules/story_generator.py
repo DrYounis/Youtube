@@ -90,8 +90,8 @@ class StoryGenerator:
   "visual_keywords": "كلمات مفتاحية بالإنجليزية لوصف المشاهد المناسبة (مثال: desert, mosque, prayer, stars)"
 }"""
 
-        # Create the system prompt
-        system_prompt = f"""أنت راوي قصص إسلامية محترف. مهمتك كتابة قصص إسلامية أصلية باللغة العربية الفصحى.
+        # Create the system prompt (using concatenation to avoid f-string format errors)
+        prompt_intro = f"""أنت راوي قصص إسلامية محترف. مهمتك كتابة قصص إسلامية أصلية باللغة العربية الفصحى.
 
 المتطلبات:
 - القصة يجب أن تكون أصلية (ليست منسوخة)
@@ -113,7 +113,9 @@ class StoryGenerator:
 - القصة يجب أن تكون ملتزمة بالقيم الإسلامية المحافظة.
 
 المخرجات المطلوبة (تنسيق JSON):
-{json_format}"""
+"""
+        
+        system_prompt = prompt_intro + json_format
 
         user_prompt = f"اكتب قصة إسلامية قصيرة مؤثرة حول موضوع: {topic_prompt}، مع التركيز على ثيمة '{theme}'."
         
