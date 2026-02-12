@@ -83,6 +83,13 @@ class StoryGenerator:
         words_per_second = 2.2  # ~132 words per minute
         target_words = int(target_seconds * words_per_second)
         
+        # JSON format for output
+        json_format = """{
+  "title": "العنوان التلقائي",
+  "story": "نص القصة هنا...",
+  "visual_keywords": "كلمات مفتاحية بالإنجليزية لوصف المشاهد المناسبة (مثال: desert, mosque, prayer, stars)"
+}"""
+
         # Create the system prompt
         system_prompt = f"""أنت راوي قصص إسلامية محترف. مهمتك كتابة قصص إسلامية أصلية باللغة العربية الفصحى.
 
@@ -105,16 +112,8 @@ class StoryGenerator:
 - لا تذكر النساء في القصة إلا للضرورة القصوى وباحترام تام.
 - القصة يجب أن تكون ملتزمة بالقيم الإسلامية المحافظة.
 
-- القصة يجب أن تكون ملتزمة بالقيم الإسلامية المحافظة.
-
 المخرجات المطلوبة (تنسيق JSON):
 {json_format}"""
-
-        json_format = """{
-  "title": "العنوان التلقائي",
-  "story": "نص القصة هنا...",
-  "visual_keywords": "كلمات مفتاحية بالإنجليزية لوصف المشاهد المناسبة (مثال: desert, mosque, prayer, stars)"
-}"""
 
         user_prompt = f"اكتب قصة إسلامية قصيرة مؤثرة حول موضوع: {topic_prompt}، مع التركيز على ثيمة '{theme}'."
         
