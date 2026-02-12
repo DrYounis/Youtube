@@ -155,6 +155,9 @@ class StoryGenerator:
             if not title:
                 title = self._generate_title(story_text, topic, theme)
             
+            # Clean title
+            title = self._clean_title(title)
+            
             # Estimate actual duration
             word_count = len(story_text.split())
             duration_estimate = int(word_count / words_per_second)
@@ -172,11 +175,32 @@ class StoryGenerator:
             
         except Exception as e:
             raise Exception(f"Error generating story: {str(e)}")
+
+    def _clean_title(self, title: str) -> str:
+        """Clean title from prefixes, quotes and extra labels"""
+        
+        # Remove common prefixes
+        prefixes = [
+            r'^عنوان مقترح:\s*',
+            r'^العنوان:\s*',
+            r'^مقترح لعنوان:\s*',
+            r'^Title:\s*',
+            r'^Suggested Title:\s*'
+        ]
+        
+        cleaned = title.strip()
+        for p in prefixes:
+            cleaned = re.sub(p, '', cleaned, flags=re.IGNORECASE)
+            
+        # Remove surrounding quotes
+        cleaned = cleaned.strip('"').strip("'").strip('«').strip('»')
+        
+        return cleaned.strip()
     
     def _generate_title(self, story_text: str, topic: str, theme: str) -> str:
         """Generate an engaging title for the story"""
         
-        system_prompt = "أنت خبير في صياغة عناوين جذابة للقصص الإسلامية. اكتب عنواناً قصيراً (4-8 كلمات) جذاباً ومعبّراً."
+        system_prompt = "أنت خبير في صياغة عناوين جذابة للقصص الإسلامية. اكتب العنوان فقط مباشرة بدون أي مقدمات أو علامات تنصيص. لا تكتب كلمات مثل 'عنوان مقترح' أو 'العنوان'."
         user_prompt = f"اقترح عنواناً جذاباً لهذه القصة:\n\n{story_text[:500]}..."
         
         try:
