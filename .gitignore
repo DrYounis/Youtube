@@ -37,6 +37,7 @@ logs/
 
 # OS
 .DS_Store
+._*
 Thumbs.db
 
 # YouTube tokens
