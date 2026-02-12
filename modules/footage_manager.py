@@ -205,15 +205,30 @@ class FootageManager:
         negative_query = safety_config.get('negative_query', '')
         banned_keywords = safety_config.get('banned_keywords', [])
         mandatory_modifiers = safety_config.get('mandatory_modifiers', '')
+        thematic_mapping = self.footage_config.get('thematic_mapping', {})
         
         # Determine keywords to use
         keywords_to_try = []
         
         if ai_keywords:
-            # Check for banned words
             candidates = [k.strip().lower() for k in ai_keywords.split(',')]
-            safe_candidates = []
             
+            # PHASE 1: Thematic Mapping (Highest Priority)
+            # Check if any AI keyword matches our curated thematic list
+            mapped_keywords = []
+            for candidate in candidates:
+                for theme, proven_term in thematic_mapping.items():
+                    if theme in candidate:
+                        print(f"🎯 Thematic Match: '{candidate}' mapped to proven visual '{proven_term}'")
+                        mapped_keywords.append(proven_term)
+                        break
+            
+            if mapped_keywords:
+                keywords_to_try.extend(mapped_keywords)
+            
+            # PHASE 2: Safe AI Keywords (Fallback)
+            # Only use original AI keywords if they aren't banned
+            safe_candidates = []
             for k in candidates:
                 is_banned = False
                 for banned in banned_keywords:
@@ -225,9 +240,12 @@ class FootageManager:
                     safe_candidates.append(k)
             
             if safe_candidates:
-                keywords_to_try = safe_candidates
+                keywords_to_try.extend(safe_candidates)
             else:
-                print("⚠️  All AI keywords were blocked. Falling back to category defaults.")
+                print("⚠️  All AI keywords were blocked or unsafe.")
+        
+        # Remove duplicates while preserving order
+        keywords_to_try = list(dict.fromkeys(keywords_to_try))
         
         # Add category defaults for variety (essential fallback)
         category_keywords = self.footage_config['keywords'].get(category, [])
@@ -336,16 +354,21 @@ def test_footage_manager():
     try:
         manager = FootageManager()
         
-        # Test 1: Safe Search
-        print("\n🔍 Test 1: Normal Search")
-        manager.get_random_footage(ai_keywords="mosque, architecture")
+        # Test 1: Thematic Mapping (Sadness -> Rain)
+        print("\n🔍 Test 1: Thematic Mapping (Sadness)")
+        # Should trigger "rain window" or similar
+        manager.get_random_footage(ai_keywords="sadness, grief, loss")
         
-        # Test 2: Unsafe Search (Should be completely blocked or sanitized)
-        print("\n🔍 Test 2: Unsafe Keyword Search (woman, beach)")
-        # This should trigger the block/sanitize logic
-        manager.get_random_footage(ai_keywords="beautiful woman, beach, summer")
+        # Test 2: Thematic Mapping (Prophet -> Desert)
+        print("\n🔍 Test 2: Thematic Mapping (Prophet)")
+        # Should trigger "desert dunes"
+        manager.get_random_footage(ai_keywords="prophet, messenger, revelation")
+
+        # Test 3: Unsafe Search (Should be blocked)
+        print("\n🔍 Test 3: Unsafe Keyword Search")
+        manager.get_random_footage(ai_keywords="woman, fashion, model")
         
-        # Test 3: Cache Stats
+        # Test 4: Cache Stats
         print("\n📊 Cache Statistics:")
         print(f"   Cached videos: {len(manager.cache['videos'])}")
         

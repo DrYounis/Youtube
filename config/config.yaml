@@ -114,6 +114,35 @@ footage:
     mandatory_modifiers: "no people, landscape, architecture, nature, abstract, blur, cinematic, timelapse, hyperlapse"
     
     must_include_for_people: "halal, modesty, hijab, long clothes, no face"
+    
+  # Thematic Mapping: Maps story keywords to SAFE, HIGH-QUALITY Pexels search terms
+  # This fixes the "irrelevant footage" issue by forcing proven search terms
+  thematic_mapping:
+    # Prophets & History
+    prophet: "desert dunes, ancient ruins, sun rays, cinematic nature"
+    messenger: "mountain peak, light ray, sky clouds, birds flying"
+    revelation: "cave interior, light beam, starry night, galaxy"
+    angel: "white clouds, bright light, sky timelapse, feathers"
+    
+    # Emotions & Atmosphere
+    sadness: "rain window, dark storm, candle flame, withered flower"
+    patience: "stone stacking, calm ocean, tree roots, slow river"
+    hope: "sunrise, blooming flower, green sprout, open window"
+    fear: "thunderstorm, dark forest, rough sea, lightning"
+    peace: "still lake, green meadow, white bird, blue sky"
+    
+    # Islamic Concepts
+    prayer: "mosque arch, lantern, open quran, prayer beads, minaret"
+    worship: "night sky stars, moon, prostration silhouette (no face), hands raising"
+    charity: "hands giving (close up), coins, wheat, water flowing"
+    quran: "quran book, arabic calligraphy, wooden stand, reading light"
+    
+    # Nature & World
+    creation: "cosmos, galaxy, earth from space, blooming time lapse"
+    water: "waterfall, river stream, ocean waves, rain drops"
+    fire: "campfire, candle light, volcano, fireplace"
+    travel: "camel footprints, desert path, caravan, horse running (no rider)"
+    war: "dust storm, horse feet, sword silhouette, flags waving, fire embers"
   
   keywords:
     islamic:
