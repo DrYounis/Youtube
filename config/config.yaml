@@ -76,8 +76,13 @@ video:
 # Footage Settings
 footage:
   sources:
-    - pexels
     - pixabay
+  
+  # Safety settings to avoid showing women (as requested)
+  safety:
+    negative_query: "-woman -girl -people -bikini -model"
+    # Mandatory keywords to add to ensure modesty if people are shown
+    must_include_for_people: "halal, modesty, hijab"
   
   keywords:
     islamic:

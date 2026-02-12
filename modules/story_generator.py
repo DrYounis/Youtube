@@ -97,7 +97,18 @@ class StoryGenerator:
 - ملهمة ومؤثرة
 - صحيحة من الناحية الإسلامية
 - سهلة الفهم
-- مناسبة لمقاطع يوتيوب شورتس"""
+- مناسبة لمقاطع يوتيوب شورتس
+
+ملاحظة هامة جداً:
+- لا تذكر النساء في القصة إلا للضرورة القصوى وباحترام تام.
+- القصة يجب أن تكون ملتزمة بالقيم الإسلامية المحافظة.
+
+المخرجات المطلوبة (تنسيق JSON):
+{
+  "title": "العنوان التلقائي",
+  "story": "نص القصة هنا...",
+  "visual_keywords": "كلمات مفتاحية بالإنجليزية لوصف المشاهد المناسبة (مثال: desert, mosque, prayer, stars)"
+}"""
 
         user_prompt = f"اكتب قصة إسلامية قصيرة مؤثرة حول موضوع: {topic_prompt}، مع التركيز على ثيمة '{theme}'."
         
@@ -110,26 +121,39 @@ class StoryGenerator:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
                     ],
+                    response_format={"type": "json_object"},
                     temperature=0.8,
-                    max_tokens=800,
-                    top_p=0.9
+                    max_tokens=1000
                 )
-                story_text = response.choices[0].message.content.strip()
+                import json
+                story_json = json.loads(response.choices[0].message.content.strip())
                 
             elif self.provider == 'anthropic':
+                # Anthropic doesn't have a strict json_object mode like OpenAI in this version
+                # so we append a JSON instruction to the user prompt
+                user_prompt += "\n\nPlease provide the output in JSON format with keys: 'title', 'story', 'visual_keywords'."
                 response = self.client.messages.create(
                     model=self.model,
-                    max_tokens=800,
-                    temperature=0.8,
+                    max_tokens=1000,
+                    temperature=0.7,
                     system=system_prompt,
                     messages=[
                         {"role": "user", "content": user_prompt}
                     ]
                 )
-                story_text = response.content[0].text.strip()
+                import json
+                import re
+                content = response.content[0].text.strip()
+                # Clean up potential markdown code blocks
+                json_str = re.search(r'{.*}', content, re.DOTALL).group()
+                story_json = json.loads(json_str)
             
-            # Generate title using AI
-            title = self._generate_title(story_text, topic, theme)
+            story_text = story_json.get('story', '')
+            title = story_json.get('title', '')
+            visual_keywords = story_json.get('visual_keywords', '')
+            
+            if not title:
+                title = self._generate_title(story_text, topic, theme)
             
             # Estimate actual duration
             word_count = len(story_text.split())
@@ -142,6 +166,7 @@ class StoryGenerator:
                 'theme': theme,
                 'word_count': word_count,
                 'duration_estimate': duration_estimate,
+                'visual_keywords': visual_keywords,
                 'language': 'ar'
             }
             

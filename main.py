@@ -116,11 +116,15 @@ class AutomationPipeline:
             
             # Step 3: Get footage
             print("🎬 Step 3/5: Selecting background footage...")
-            footage_category = 'islamic' if story_data['topic'] in ['prophets', 'sahaba', 'quran_stories'] else 'nature'
+            print(f"🎬 Story: {story_data['title']}")
+            print(f"🔍 Visual Keywords: {story_data.get('visual_keywords', 'N/A')}")
             
+            # 2. Get Appropriate Footage
+            print("\n📥 Step 2: Downloading footage...")
             footage_path = self.footage_manager.get_random_footage(
-                category=footage_category,
-                min_duration=int(tts_result['duration'])
+                category=story_data['topic'],
+                min_duration=story_data['duration_estimate'],
+                ai_keywords=story_data.get('visual_keywords')
             )
             
             if not footage_path:

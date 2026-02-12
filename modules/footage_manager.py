@@ -185,80 +185,83 @@ class FootageManager:
     def get_random_footage(
         self,
         category: str = 'islamic',
-        min_duration: int = 10
+        min_duration: int = 10,
+        ai_keywords: Optional[str] = None
     ) -> Optional[str]:
         """
-        Get random appropriate footage for the video
+        Get appropriate footage for the video
         
         Args:
             category: 'islamic' or 'nature'
             min_duration: Minimum video duration in seconds
+            ai_keywords: Specific keywords from AI (comma separated)
         
         Returns:
             Path to video file
         """
-        # Get keywords for category
-        keywords = self.footage_config['keywords'].get(category, [])
-        if not keywords:
-            keywords = self.footage_config['keywords']['nature']
+        # Safety filter
+        safety_config = self.footage_config.get('safety', {})
+        negative_query = safety_config.get('negative_query', '')
         
-        # Randomly select a keyword
-        keyword = random.choice(keywords)
+        # Determine keywords to use
+        keywords_to_try = []
         
-        # Check if we have cached videos for this keyword
-        cache_key = f"{category}_{keyword}"
+        if ai_keywords:
+            keywords_to_try = [k.strip() for k in ai_keywords.split(',')]
         
-        if cache_key in self.cache.get('keywords', {}):
-            cached_files = self.cache['keywords'][cache_key]
-            # Check if files still exist and not too old
-            valid_files = []
-            for filename in cached_files:
-                filepath = os.path.join(self.footage_dir, filename)
-                if os.path.exists(filepath):
-                    # Check age
-                    video_info = self.cache['videos'].get(filename, {})
-                    downloaded_at = datetime.fromisoformat(video_info.get('downloaded_at', '2020-01-01'))
-                    cache_days = self.footage_config.get('cache_duration_days', 30)
-                    
-                    if datetime.now() - downloaded_at < timedelta(days=cache_days):
-                        valid_files.append(filepath)
+        # Add category defaults for variety
+        category_keywords = self.footage_config['keywords'].get(category, [])
+        if category_keywords:
+            keywords_to_try.append(random.choice(category_keywords))
+        
+        # Shuffle to try different ones
+        random.shuffle(keywords_to_try)
+        
+        for keyword in keywords_to_try:
+            # Check cache first
+            cache_key = f"q_{keyword.replace(' ', '_')}"
             
-            if valid_files:
-                return random.choice(valid_files)
+            if cache_key in self.cache.get('keywords', {}):
+                # Similar logic as before for cache...
+                cached_files = self.cache['keywords'][cache_key]
+                valid_files = []
+                for filename in cached_files:
+                    filepath = os.path.join(self.footage_dir, filename)
+                    if os.path.exists(filepath):
+                        video_info = self.cache['videos'].get(filename, {})
+                        downloaded_at = datetime.fromisoformat(video_info.get('downloaded_at', '2020-01-01'))
+                        cache_days = self.footage_config.get('cache_duration_days', 30)
+                        if datetime.now() - downloaded_at < timedelta(days=cache_days):
+                            valid_files.append(filepath)
+                
+                if valid_files:
+                    return random.choice(valid_files)
+            
+            # Search with safety filter
+            full_query = f"{keyword} {negative_query}".strip()
+            print(f"Searching for footage: '{full_query}'...")
+            videos = self.search_videos(full_query, orientation='portrait')
+            
+            if videos:
+                suitable_videos = [v for v in videos if v.get('duration', 0) >= min_duration]
+                if not suitable_videos:
+                    suitable_videos = videos
+                
+                video = random.choice(suitable_videos[:10])
+                filename = f"q_{keyword.replace(' ', '_')}_{video['id']}.mp4"
+                filepath = self.download_video(video, filename)
+                
+                if filepath:
+                    if cache_key not in self.cache['keywords']:
+                        self.cache['keywords'][cache_key] = []
+                    if filename not in self.cache['keywords'][cache_key]:
+                        self.cache['keywords'][cache_key].append(filename)
+                        self._save_cache()
+                    return filepath
         
-        # Search for new videos
-        print(f"Searching for {category} footage: '{keyword}'...")
-        videos = self.search_videos(keyword, orientation='portrait')
-        
-        if not videos:
-            print(f"No videos found for '{keyword}'")
-            return None
-        
-        # Filter by duration
-        suitable_videos = [
-            v for v in videos
-            if v.get('duration', 0) >= min_duration
-        ]
-        
-        if not suitable_videos:
-            suitable_videos = videos  # Use any if none meet duration requirement
-        
-        # Select random video
-        video = random.choice(suitable_videos[:5])  # From top 5 results
-        
-        # Download it
-        filename = f"{category}_{keyword.replace(' ', '_')}_{video['id']}.mp4"
-        filepath = self.download_video(video, filename)
-        
-        # Update keyword cache
-        if cache_key not in self.cache['keywords']:
-            self.cache['keywords'][cache_key] = []
-        
-        if filename not in self.cache['keywords'][cache_key]:
-            self.cache['keywords'][cache_key].append(filename)
-            self._save_cache()
-        
-        return filepath
+        # Ultimate fallback
+        print("Falling back to nature footage...")
+        return self.get_random_footage('nature', min_duration)
     
     def cleanup_old_footage(self, days: int = 30):
         """
