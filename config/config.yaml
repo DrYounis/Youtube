@@ -25,7 +25,7 @@ story:
 
 # Text-to-Speech Settings
 tts:
-  provider: "google"  # Options: "google", "elevenlabs"
+  provider: "elevenlabs"  # Options: "google", "elevenlabs"
   
   # Google Cloud TTS settings
   google:
@@ -36,8 +36,10 @@ tts:
   
   # ElevenLabs settings (alternative)
   elevenlabs:
-    voice_id: ""  # Add your preferred Arabic voice ID
+    voice_id: "pNInz6obpgDQGcFmaJgB"  # Adam - multilingual, supports Arabic
     model_id: "eleven_multilingual_v2"
+    stability: 0.5
+    similarity_boost: 0.75
 
 # Video Creation Settings
 video:
