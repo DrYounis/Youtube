@@ -110,7 +110,8 @@ footage:
       - "consumer"
       
     # Mandatory keywords to append to EVERY search query
-    mandatory_modifiers: "no people, landscape, architecture, nature, abstract, blur, cinematic"
+    # CRITICAL: "no people" must be first to guide the search algorithm
+    mandatory_modifiers: "no people, landscape, architecture, nature, abstract, blur, cinematic, timelapse, hyperlapse"
     
     must_include_for_people: "halal, modesty, hijab, long clothes, no face"
   

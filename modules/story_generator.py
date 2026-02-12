@@ -87,7 +87,7 @@ class StoryGenerator:
         json_format = """{
   "title": "العنوان التلقائي",
   "story": "نص القصة هنا...",
-  "visual_keywords": "كلمات مفتاحية بالإنجليزية لوصف المشاهد المناسبة (مثال: desert, mosque, prayer, stars)"
+  "visual_keywords": "كلمات مفتاحية بالإنجليزية تصف (جمادات، أماكن، طبيعة) فقط. ممنوع وصف الأشخاص نهائياً. (مثال: ancient book, desert dunes, wooden rosary, candle flame, mosque arch)"
 }"""
 
         # Create the system prompt (using concatenation to avoid f-string format errors)
@@ -108,9 +108,13 @@ class StoryGenerator:
 - سهلة الفهم
 - مناسبة لمقاطع يوتيوب شورتس
 
-ملاحظة هامة جداً:
-- لا تذكر النساء في القصة إلا للضرورة القصوى وباحترام تام.
-- القصة يجب أن تكون ملتزمة بالقيم الإسلامية المحافظة.
+⚠️ تعليمات صارمة جداً للمشاهد البصرية (Visual Keywords):
+1. ممنوع نهائياً وصف أي شخصيات بشرية (رجال، نساء، أطفال).
+2. يجب أن تصف فقط: الجمادات، الطبيعة، الأماكن، العمارة الإسلامية، الرموز.
+3. أمثلة مقبولة: "old wooden door", "open quran", "desert sky", "camel footprint in sand", "lantern light".
+4. أمثلة مرفوضة: "man praying", "woman hijab", "child crying", "prophet walking".
+
+الهدف هو إنشاء فيديو رمزي وروحاني يعتمد على المشاعر والأجواء وليس التمثيل.
 
 المخرجات المطلوبة (تنسيق JSON):
 """
