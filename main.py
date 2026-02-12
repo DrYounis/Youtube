@@ -92,7 +92,42 @@ class AutomationPipeline:
         try:
             # Step 1: Generate story
             print("📖 Step 1/5: Generating Islamic story...")
-            story_data = self.story_generator.generate_story(topic=topic, theme=theme)
+            
+            # Check for trending hooks first
+            from modules.trend_manager import TrendManager
+            trend_manager = TrendManager()
+            
+            story_data = None
+            
+            # Try to load from queue unless specific topic requested
+            if not topic and not theme:
+                try:
+                    import json
+                    if os.path.exists(trend_manager.queue_file):
+                        with open(trend_manager.queue_file, 'r', encoding='utf-8') as f:
+                            queue = json.load(f)
+                        
+                        if queue:
+                            hook = queue.pop(0)
+                            print(f"🔥 TRENDING ALERT: Using R&D Hook: '{hook.get('rationale')}'")
+                            print(f"   Hook Prompt: {hook.get('hook_prompt')}")
+                            
+                            # Update queue file
+                            with open(trend_manager.queue_file, 'w', encoding='utf-8') as f:
+                                json.dump(queue, f, indent=2, ensure_ascii=False)
+                                
+                            # Generate story from hook
+                            # We'll need to modify generate_story to accept a 'user_prompt_override'
+                            # or just pass the hook as the theme
+                            story_data = self.story_generator.generate_story(
+                                topic=hook.get('topic'),
+                                theme=hook.get('theme') + f" (Focus: {hook.get('hook_prompt')})"
+                            )
+                except Exception as e:
+                    print(f"⚠️  R&D Queue Error: {e}")
+            
+            if not story_data:
+                story_data = self.story_generator.generate_story(topic=topic, theme=theme)
             
             print(f"   ✅ Generated: {story_data['title']}")
             print(f"   📝 Topic: {story_data['topic']}, Theme: {story_data['theme']}")
