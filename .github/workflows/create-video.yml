@@ -64,13 +64,17 @@ jobs:
           PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
           
           # YouTube Upload (optional)
-          YOUTUBE_CLIENT_SECRETS=${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+          YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json
           EOF
       
       - name: Create YouTube credentials file (if secrets exist)
         if: ${{ secrets.YOUTUBE_CLIENT_SECRETS != '' }}
         run: |
           echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
+          # Also create token file if it exists
+          if [ -n "${{ secrets.YOUTUBE_TOKEN }}" ]; then
+            echo '${{ secrets.YOUTUBE_TOKEN }}' > config/youtube_token.json
+          fi
       
       - name: Create video
         id: create_video

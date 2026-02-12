@@ -45,7 +45,7 @@ jobs:
           ANTHROPIC_MODEL=${{ secrets.ANTHROPIC_MODEL }}
           ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
           PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
-          YOUTUBE_CLIENT_SECRETS=/github/workspace/config/youtube-client-secrets.json
+          YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json
           EOF
       
       - name: Create YouTube credentials
@@ -54,7 +54,7 @@ jobs:
           echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
           # Also create token file if it exists
           if [ -n "${{ secrets.YOUTUBE_TOKEN }}" ]; then
-            echo '${{ secrets.YOUTUBE_TOKEN }}' > config/youtube-token.json
+            echo '${{ secrets.YOUTUBE_TOKEN }}' > config/youtube_token.json
           fi
       
       - name: Create videos
@@ -72,7 +72,7 @@ jobs:
             echo "Creating video $i of $COUNT..."
             
             # If YouTube credentials exist, upload. Otherwise dry-run
-            if [ -f "config/youtube-client-secrets.json" ] && [ -f "config/youtube-token.json" ]; then
+            if [ -f "config/youtube-client-secrets.json" ] && [ -f "config/youtube_token.json" ]; then
               echo "YouTube credentials found - uploading to YouTube"
               python3 main.py
             else
