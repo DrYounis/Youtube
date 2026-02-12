@@ -68,7 +68,9 @@ jobs:
           EOF
       
       - name: Create YouTube credentials file (if secrets exist)
-        if: ${{ secrets.YOUTUBE_CLIENT_SECRETS != '' }}
+        env:
+          YOUTUBE_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+        if: ${{ env.YOUTUBE_SECRETS != '' }}
         run: |
           echo '${{ secrets.YOUTUBE_CLIENT_SECRETS }}' > config/youtube-client-secrets.json
           # Also create token file if it exists
