@@ -32,7 +32,7 @@ class TTSGenerator:
         elif self.provider == 'elevenlabs':
             self.api_key = os.getenv('ELEVENLABS_API_KEY')
             if not self.api_key:
-                raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
+                raise ValueError("ELEVENLABS_API_KEY not found. Please add it to GitHub Secrets or .env file.")
             self.elevenlabs_config = self.tts_config['elevenlabs']
         else:
             raise NotImplementedError(f"Provider '{self.provider}' not yet implemented")

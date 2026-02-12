@@ -36,9 +36,10 @@ class StoryGenerator:
         elif self.provider == 'anthropic':
             api_key = os.getenv('ANTHROPIC_API_KEY')
             if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+                raise ValueError("ANTHROPIC_API_KEY not found. Please add it to GitHub Secrets or .env file.")
             self.client = anthropic.Anthropic(api_key=api_key)
-            self.model = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022')
+            # Handle empty string from env
+            self.model = os.getenv('ANTHROPIC_MODEL') or 'claude-3-haiku-20240307'
         else:
             raise ValueError(f"Unknown AI provider: {self.provider}. Use 'openai' or 'anthropic'")
         

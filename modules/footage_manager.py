@@ -29,7 +29,7 @@ class FootageManager:
         
         self.api_key = os.getenv('PEXELS_API_KEY')
         if not self.api_key:
-            raise ValueError("PEXELS_API_KEY not found in environment variables")
+            raise ValueError("PEXELS_API_KEY not found. Please add it to GitHub Secrets or .env file.")
         
         self.base_url = "https://api.pexels.com/videos"
         self.headers = {"Authorization": self.api_key}

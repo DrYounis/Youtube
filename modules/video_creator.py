@@ -35,6 +35,38 @@ class VideoCreator:
         # Create output directory
         os.makedirs(self.paths_config['output_dir'], exist_ok=True)
         os.makedirs(self.paths_config['temp_dir'], exist_ok=True)
+        
+        # Configure ImageMagick for MoviePy (required for subtitles)
+        self._configure_imagemagick()
+
+    def _configure_imagemagick(self):
+        """Configure ImageMagick binary path for MoviePy"""
+        from moviepy.config import change_settings
+        
+        # Common paths for ImageMagick 'convert' binary
+        possible_paths = [
+            '/usr/bin/convert',
+            '/usr/local/bin/convert',
+            'convert',  # If in PATH
+            '/opt/homebrew/bin/convert'  # macOS Homebrew
+        ]
+        
+        found_path = None
+        for path in possible_paths:
+            import subprocess
+            try:
+                # Check if the path works
+                subprocess.run([path, '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+                found_path = path
+                break
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                continue
+        
+        if found_path:
+            print(f"🎨 ImageMagick found: {found_path}")
+            change_settings({"IMAGEMAGICK_BINARY": found_path})
+        else:
+            print("⚠️  ImageMagick 'convert' not found! Subtitles might fail.")
     
     def prepare_footage(self, footage_path: str, duration: float) -> VideoFileClip:
         """

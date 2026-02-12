@@ -27,11 +27,34 @@ class AutomationPipeline:
         
         # Initialize all modules
         print("🚀 Initializing automation pipeline...")
+        
+        # Diagnostic: Check required environment variables
+        required_vars = [
+            'ANTHROPIC_API_KEY',
+            'ELEVENLABS_API_KEY',
+            'PEXELS_API_KEY'
+        ]
+        print("🔍 Checking environment variables:")
+        all_present = True
+        for var in required_vars:
+            val = os.getenv(var)
+            status = "✅ Found" if val and len(val) > 5 else "❌ MISSING"
+            print(f"   - {var}: {status}")
+            if not val:
+                all_present = False
+        
+        if not all_present:
+            print("\n⚠️  WARNING: Some required API keys are missing! Automation will likely fail.")
+        
         # Initialize components
-        self.story_generator = StoryGenerator(config_path)
-        self.tts_generator = TTSGenerator(config_path)
-        self.footage_manager = FootageManager(config_path)
-        self.video_creator = VideoCreator(config_path)
+        try:
+            self.story_generator = StoryGenerator(config_path)
+            self.tts_generator = TTSGenerator(config_path)
+            self.footage_manager = FootageManager(config_path)
+            self.video_creator = VideoCreator(config_path)
+        except Exception as e:
+            print(f"\n❌ Initialization failed: {str(e)}")
+            raise
         
         # YouTube uploader is optional (for testing without upload)
         try:
