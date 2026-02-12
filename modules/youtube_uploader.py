@@ -41,7 +41,7 @@ class YouTubeUploader:
                 "Download OAuth 2.0 credentials from Google Cloud Console."
             )
         
-        self.token_file = 'config/youtube_token.pickle'
+        self.token_file = 'config/youtube_token.json'
         self.youtube = None
         
         # Load video history
@@ -67,8 +67,7 @@ class YouTubeUploader:
         
         # Load saved credentials
         if os.path.exists(self.token_file):
-            with open(self.token_file, 'rb') as token:
-                creds = pickle.load(token)
+            creds = Credentials.from_authorized_user_file(self.token_file, SCOPES)
         
         # If no valid credentials, login
         if not creds or not creds.valid:
@@ -84,8 +83,8 @@ class YouTubeUploader:
                 creds = flow.run_local_server(port=8080)
             
             # Save credentials
-            with open(self.token_file, 'wb') as token:
-                pickle.dump(creds, token)
+            with open(self.token_file, 'w') as token:
+                token.write(creds.to_json())
             
             print("✅ Authentication successful!")
         
