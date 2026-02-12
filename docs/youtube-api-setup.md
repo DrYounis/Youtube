@@ -191,10 +191,10 @@ python3 -c "from modules.youtube_uploader import YouTubeUploader; uploader = You
 You should see in terminal:
 ```
 ✅ Authentication successful!
-Token saved to: config/youtube-token.json
+Token saved to: config/youtube_token.json
 ```
 
-**Important**: The file `config/youtube-token.json` is created. This allows automatic uploads without browser login each time.
+**Important**: The file `config/youtube_token.json` is created. This allows automatic uploads without browser login each time.
 
 ---
 
@@ -320,7 +320,7 @@ Before going fully automatic, verify:
 - ✅ OAuth credentials downloaded
 - ✅ `youtube-client-secrets.json` in `config/` folder
 - ✅ First-time authentication completed
-- ✅ `youtube-token.json` created in `config/` folder
+- ✅ `youtube_token.json` created in `config/` folder
 - ✅ Test upload works (`python3 main.py`)
 - ✅ Video appears in YouTube Studio
 - ✅ Both secrets added to GitHub
@@ -355,7 +355,7 @@ Before going fully automatic, verify:
 ### Token Expired
 
 **Solution:**
-- Delete `config/youtube-token.json`
+- Delete `config/youtube_token.json`
 - Run the authentication again:
   ```bash
   python3 -c "from modules.youtube_uploader import YouTubeUploader; uploader = YouTubeUploader(); uploader.authenticate()"
@@ -398,7 +398,7 @@ To upload more videos:
 
 1. **Never commit credentials**:
    - `youtube-client-secrets.json` ✅ Already in `.gitignore`
-   - `youtube-token.json` ✅ Already in `.gitignore`
+   - `youtube_token.json` ✅ Already in `.gitignore`
 
 2. **Keep secrets secure**:
    - Only add to GitHub Secrets (never commit)
