@@ -36,7 +36,12 @@ jobs:
       run: |
         git config --global user.name 'IslamicStoryBot R&D'
         git config --global user.email 'bot@noreply.github.com'
-        git add data/content_queue.json
-        # Only commit if there are changes
-        git diff --quiet && git diff --staged --quiet || git commit -m "📈 R&D: Added new trending story hooks to queue"
-        git push
+        
+        # Check if file exists before adding
+        if [ -f "data/content_queue.json" ]; then
+          git add data/content_queue.json
+          # Only commit if there are changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "📈 R&D: Added new trending story hooks to queue" && git push)
+        else
+          echo "⚠️ No content queue file found. Trend Manager might not have generated new hooks."
+        fi
