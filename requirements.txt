@@ -11,7 +11,7 @@ google-auth-oauthlib>=1.2.0
 google-api-python-client>=2.115.0
 
 # Video Processing
-moviepy>=1.0.3
+moviepy<2.0.0
 Pillow>=10.2.0
 opencv-python>=4.9.0
 
