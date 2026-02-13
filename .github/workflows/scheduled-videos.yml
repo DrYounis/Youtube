@@ -1,11 +1,11 @@
 name: Scheduled Video Creation
 
 on:
-  # Schedule: Run daily at 9 AM Saudi Arabia time (6 AM UTC)
-  schedule:
-    - cron: '0 6 * * *'  # Daily at 9 AM Saudi Arabia (6 AM UTC)
+  # Schedule REMOVED to prevent account flagging
+  # schedule:
+  #   - cron: '0 6 * * *'  # Daily at 9 AM Saudi Arabia (6 AM UTC)
   
-  # Also allow manual trigger
+  # Allow manual trigger for video generation ONLY
   workflow_dispatch:
     inputs:
       videos_count:
@@ -59,20 +59,22 @@ jobs:
             printf 'ANTHROPIC_MODEL=%s\n' "$ANTHROPIC_MDL"
             printf 'ELEVENLABS_API_KEY=%s\n' "$ELEVENLABS_KEY"
             printf 'PEXELS_API_KEY=%s\n' "$PEXELS_KEY"
-            printf 'YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json\n'
+            # Youtube secrets commented out for safety
+            # printf 'YOUTUBE_CLIENT_SECRETS=config/youtube-client-secrets.json\n'
           } > config/.env
       
-      - name: Create YouTube credentials
-        env:
-          YOUTUBE_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
-          YOUTUBE_TOKEN_VAL: ${{ secrets.YOUTUBE_TOKEN }}
-        if: ${{ env.YOUTUBE_SECRETS != '' }}
-        run: |
-          printf '%s' "$YOUTUBE_SECRETS" > config/youtube-client-secrets.json
-          # Also create token file if it exists
-          if [ -n "$YOUTUBE_TOKEN_VAL" ]; then
-            printf '%s' "$YOUTUBE_TOKEN_VAL" > config/youtube_token.json
-          fi
+      # YouTube Credentials Step DISABLED for safety
+      # - name: Create YouTube credentials
+      #   env:
+      #     YOUTUBE_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+      #     YOUTUBE_TOKEN_VAL: ${{ secrets.YOUTUBE_TOKEN }}
+      #   if: ${{ env.YOUTUBE_SECRETS != '' }}
+      #   run: |
+      #     printf '%s' "$YOUTUBE_SECRETS" > config/youtube-client-secrets.json
+      #     # Also create token file if it exists
+      #     if [ -n "$YOUTUBE_TOKEN_VAL" ]; then
+      #       printf '%s' "$YOUTUBE_TOKEN_VAL" > config/youtube_token.json
+      #     fi
 
       - name: Create Google TTS credentials
         env:
@@ -100,14 +102,10 @@ jobs:
           for i in $(seq 1 $COUNT); do
             echo "========== Creating video $i of $COUNT =========="
 
-            # If YouTube credentials exist, upload. Otherwise dry-run
-            if [ -f "config/youtube-client-secrets.json" ] && [ -f "config/youtube_token.json" ]; then
-              echo "YouTube credentials found - uploading to YouTube"
-              python3 main.py 2>&1 | tee /tmp/video_output_${i}.log || FAILED=$((FAILED+1))
-            else
-              echo "No YouTube credentials - creating video without upload"
-              python3 main.py --dry-run 2>&1 | tee /tmp/video_output_${i}.log || FAILED=$((FAILED+1))
-            fi
+            # ALWAYS use --dry-run (Safety Mode)
+            # This generates the video but skips the YouTube Upload API entirely
+            echo "🔒 SAFETY MODE: Generating video ONLY (No Upload)"
+            python3 main.py --dry-run 2>&1 | tee /tmp/video_output_${i}.log || FAILED=$((FAILED+1))
 
             # Check if main.py failed
             if [ $FAILED -gt 0 ]; then
