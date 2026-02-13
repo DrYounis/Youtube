@@ -154,7 +154,9 @@ class TTSGenerator:
             # Debug: Check API Key format (Masked)
             if self.api_key:
                 masked_key = f"{self.api_key[:4]}...{self.api_key[-4:]}"
-                print(f"   🔑 ElevenLabs Key Debug: Length={len(self.api_key)}, Prefix={self.api_key[:4]}, Suffix={self.api_key[-4:]}")
+                import hashlib
+                key_hash = hashlib.md5(self.api_key.encode()).hexdigest()
+                print(f"   🔑 ElevenLabs Key Debug: Length={len(self.api_key)}, Prefix={self.api_key[:4]}, Suffix={self.api_key[-4:]}, Hash={key_hash}")
                 if self.api_key.strip() != self.api_key:
                     print(f"   ❌ WARNING: API Key has leading/trailing whitespace! Length stripped: {len(self.api_key.strip())}")
             else:
