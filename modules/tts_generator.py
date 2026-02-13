@@ -151,6 +151,15 @@ class TTSGenerator:
         similarity_boost = self.elevenlabs_config.get('similarity_boost', 0.75)
         
         try:
+            # Debug: Check API Key format (Masked)
+            if self.api_key:
+                masked_key = f"{self.api_key[:4]}...{self.api_key[-4:]}"
+                print(f"   🔑 ElevenLabs Key Debug: Length={len(self.api_key)}, Prefix={self.api_key[:4]}, Suffix={self.api_key[-4:]}")
+                if self.api_key.strip() != self.api_key:
+                    print(f"   ❌ WARNING: API Key has leading/trailing whitespace! Length stripped: {len(self.api_key.strip())}")
+            else:
+                print("   ❌ ERROR: ElevenLabs API Key is missing or empty!")
+
             # ElevenLabs API endpoint
             url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
             
