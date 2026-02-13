@@ -86,6 +86,9 @@ jobs:
           echo "Creating $COUNT video(s)..."
           FAILED=0
 
+          # CRITICAL: Enable pipefail so if python fails, the whole pipe fails
+          set -o pipefail
+
           for i in $(seq 1 $COUNT); do
             echo "========== Creating video $i of $COUNT =========="
 
@@ -96,6 +99,13 @@ jobs:
             else
               echo "No YouTube credentials - creating video without upload"
               python3 main.py --dry-run 2>&1 | tee /tmp/video_output_${i}.log || FAILED=$((FAILED+1))
+            fi
+
+            # Check if main.py failed
+            if [ $FAILED -gt 0 ]; then
+                echo "❌ Video $i failed! Showing logs:"
+                cat /tmp/video_output_${i}.log
+                # Don't break, try next video? No, let's fail fast for now.
             fi
 
             # Wait a bit between videos to avoid rate limits
