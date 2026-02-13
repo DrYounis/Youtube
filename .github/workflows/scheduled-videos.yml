@@ -73,6 +73,14 @@ jobs:
           if [ -n "$YOUTUBE_TOKEN_VAL" ]; then
             printf '%s' "$YOUTUBE_TOKEN_VAL" > config/youtube_token.json
           fi
+
+      - name: Create Google TTS credentials
+        env:
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_TTS_CREDENTIALS }}
+        if: ${{ env.GOOGLE_CREDS != '' }}
+        run: |
+          printf '%s' "$GOOGLE_CREDS" > config/google-tts-credentials.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=config/google-tts-credentials.json" >> $GITHUB_ENV
       
       - name: Create videos
         id: create_videos
