@@ -186,12 +186,35 @@ class AutomationPipeline:
             if upload and not dry_run:
                 print("📤 Step 5/5: Uploading to YouTube...")
                 
+                # Diagnostic: Check secrets file validity
+                client_secrets_path = os.getenv('YOUTUBE_CLIENT_SECRETS')
+                if client_secrets_path and os.path.exists(client_secrets_path):
+                    try:
+                        import json
+                        with open(client_secrets_path, 'r') as f:
+                            json.load(f)
+                        print("   ✅ Client secrets file is valid JSON")
+                    except json.JSONDecodeError as e:
+                        print(f"   ❌ FATAL: Client secrets file is NOT valid JSON: {e}")
+                        print("   👉 Check if you pasted the secret with markdown backticks (```json ... ```)")
+                        return {
+                            'success': False,
+                            'error': "Invalid YouTube Client Secrets JSON"
+                        }
+                
                 # Generate title and description
                 title_template = self.config['youtube']['title_template']
                 title = title_template.format(story_title=story_data['title'])
                 
                 description = self.story_generator.generate_description(story_data)
                 tags = self.story_generator.generate_tags(story_data)
+                
+                if not self.youtube_uploader:
+                    print("   ❌ YouTube uploader not initialized (check logs above)")
+                    return {
+                        'success': False,
+                        'error': "YouTube uploader not initialized"
+                    }
                 
                 upload_result = self.youtube_uploader.upload_video(
                     video_path=video_result['output_path'],
@@ -205,6 +228,11 @@ class AutomationPipeline:
                     print(f"   🔗 URL: {upload_result['url']}\n")
                 else:
                     print(f"   ❌ Upload failed: {upload_result['error']}\n")
+                    # CRITICAL: Return False success so workflow fails
+                    return {
+                        'success': False,
+                        'error': f"Upload failed: {upload_result['error']}"
+                    }
                 
                 result = {
                     'success': True,
@@ -241,6 +269,8 @@ class AutomationPipeline:
             
         except Exception as e:
             print(f"\n❌ AUTOMATION FAILED: {str(e)}\n")
+            import traceback
+            traceback.print_exc()
             return {
                 'success': False,
                 'error': str(e)
