@@ -25,7 +25,12 @@ story:
 
 # Text-to-Speech Settings
 tts:
-  provider: "google"  # Options: "google", "elevenlabs"
+  provider: "edge-tts"  # Options: "google", "elevenlabs", "edge-tts"
+  
+  # Edge TTS settings (Free, No Key)
+  edge_tts:
+    voice: "ar-SA-HamedNeural"  # Excellent High-Quality Arabic Voice
+    rate: "+0%"
   
   # Google Cloud TTS settings
   google:

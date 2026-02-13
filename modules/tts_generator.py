@@ -66,6 +66,8 @@ class TTSGenerator:
             return self._generate_elevenlabs_tts(
                 text, output_path, voice_name
             )
+        elif self.provider == 'edge-tts':
+            return self._generate_edge_tts(text, output_path, voice_name)
         else:
             raise NotImplementedError(f"Provider '{self.provider}' not implemented")
     
@@ -136,6 +138,59 @@ class TTSGenerator:
         except Exception as e:
             raise Exception(f"Error generating voiceover: {str(e)}")
     
+    def _generate_edge_tts(
+        self,
+        text: str,
+        output_path: str,
+        voice_name: Optional[str] = None
+    ) -> Dict[str, any]:
+        """Generate voiceover using Edge TTS (Free, High Quality)"""
+        import edge_tts
+        import asyncio
+        import nest_asyncio
+        
+        # Apply nest_asyncio to allow nested event loops in Jupyter/Scripts
+        nest_asyncio.apply()
+        
+        # Use config defaults
+        voice = voice_name or self.config['tts'].get('edge_tts', {}).get('voice', 'ar-SA-HamedNeural')
+        rate = self.config['tts'].get('edge_tts', {}).get('rate', '+0%')
+        
+        try:
+            print(f"🎙️ Generating Edge TTS with voice: {voice}")
+            
+            async def _run_tts():
+                communicate = edge_tts.Communicate(text, voice, rate=rate)
+                await communicate.save(output_path)
+            
+            # Create output directory
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            # Run async function synchronously
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is already running (e.g. in some environments), use run_until_complete isn't safe
+                # But since we use nest_asyncio, run() or run_until_complete should work
+                asyncio.run(_run_tts())
+            else:
+                loop.run_until_complete(_run_tts())
+            
+            # Estimate duration
+            char_count = len(text)
+            chars_per_second = 15  # Approx for normal speed
+            estimated_duration = char_count / chars_per_second
+            
+            return {
+                'audio_path': output_path,
+                'duration': estimated_duration,
+                'character_count': char_count,
+                'voice_name': voice,
+                'provider': 'edge-tts'
+            }
+            
+        except Exception as e:
+            raise Exception(f"Error generating Edge TTS: {str(e)}")
+
     def _generate_elevenlabs_tts(
         self,
         text: str,
