@@ -148,9 +148,13 @@ class TrendManager:
     def update_queue(self):
         """Main daily task"""
         trends = self.fetch_trending_topics()
+        using_fallback = False
+        
         if not trends:
             # Fallback for testing if API fails or no key
+            print("⚠️  No live trends found (or missing API key). Using static fallback topics.")
             trends = ["Patience in Islam", "Story of Prophet Yusuf", "Importance of Prayer"]
+            using_fallback = True
             
         hooks = self.generate_safe_hooks(trends)
         
@@ -170,6 +174,10 @@ class TrendManager:
                 json.dump(queue, f, indent=2, ensure_ascii=False)
                 
             print(f"✅ Added {len(hooks)} new ideas to the content queue.")
+            if using_fallback:
+                print("⚠️  NOTE: R&D ran in FALLBACK MODE (Static Topics). Add YOUTUBE_API_KEY to search real trends.")
+            else:
+                print("🚀 SUCCESS: R&D ran with LIVE YOUTUBE TRENDS.")
         else:
             print("⚠️ No new hooks generated.")
 
